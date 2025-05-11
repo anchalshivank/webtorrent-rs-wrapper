@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebTorrent WASM Test</title>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    #status { margin: 20px 0; padding: 10px; background: #f0f0f0; border-radius: 4px; }
+    .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+    button { padding: 8px 15px; margin: 5px 0; }
+    progress { width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>WebTorrent WASM Test</h1>
+  
+  <div class="section">
+    <h2>1. Share a File</h2>
+    <input type="file" id="file-input">
+    <button id="share-btn">Share File</button>
+    <div id="share-link" style="margin-top: 10px;"></div>
+  </div>
+  
+  <div class="section">
+    <h2>2. Download a File</h2>
+    <input type="text" id="magnet-input" placeholder="Enter magnet URI" style="width: 100%; padding: 8px;">
+    <button id="download-btn">Download</button>
+    <div id="download-progress">
+      <progress value="0" max="1" id="progress-bar"></progress>
+      <div id="progress-text">0% - Not started</div>
+      <div id="file-info"></div>
+    </div>
+  </div>
+  
+  <div id="status">Initializing WebTorrent WASM...</div>
+
+  <!-- Load WebTorrent JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+  
+  <!-- Load your compiled WASM -->
+  <script type="module">
+    import init, { WebTorrentClient } from './pkg/webtorrent_rs_wrapper.js';
+    
+    let client;
+    let currentTorrent;
+    
+    async function run() {
+      try {
+        // Initialize WASM
+        await init();
+        document.getElementById('status').textContent = 'WASM initialized. Creating WebTorrent client...';
+        
+        // Create Rust WebTorrent client - Fix: correct instantiation pattern
+        client = WebTorrentClient.new();
+        document.getElementById('status').textContent = 'Ready!';
+        
+        // Set up event listeners
+        setupUI();
+      } catch (e) {
+        document.getElementById('status').textContent = `Error: ${e}`;
+        console.error(e);
+      }
+    }
+    
+    function setupUI() {
+      // Share file button
+      document.getElementById('share-btn').addEventListener('click', async () => {
+        const fileInput = document.getElementById('file-input');
+        if (!fileInput.files.length) return;
+        
+        const file = fileInput.files[0];
+        document.getElementById('status').textContent = `Seeding ${file.name}...`;
+        
+        try {
+          // Convert file to a format Rust can handle
+          const fileBlob = new Blob([file], { type: file.type });
+          const opts = JSON.stringify({ name: file.name });
+          
+          // Call Rust wrapper
+          const result = await client.seed(fileBlob, opts);
+          const magnetUri = result.magnet_uri;
+          
+          // Create shareable link
+          const shareUrl = `${window.location.href.split('?')[0]}?magnet=${encodeURIComponent(magnetUri)}`;
+          document.getElementById('share-link').innerHTML = `
+            <p>Share this link:</p>
+            <input type="text" value="${shareUrl}" readonly style="width: 100%; padding: 5px;">
+            <p>Or magnet URI:</p>
+            <textarea rows="3" style="width: 100%;">${magnetUri}</textarea>
+          `;
+          
+          document.getElementById('status').textContent = `Seeding ${file.name}!`;
+        } catch (e) {
+          document.getElementById('status').textContent = `Error sharing file: ${e}`;
+          console.error(e);
+        }
+      });
+      
+      // Download button
+      document.getElementById('download-btn').addEventListener('click', async () => {
+        const magnetInput = document.getElementById('magnet-input');
+        if (!magnetInput.value) return;
+        
+        try {
+          document.getElementById('status').textContent = 'Starting download...';
+          
+          // Call Rust wrapper
+          currentTorrent = await client.add(magnetInput.value);
+          
+          // Set up progress updates
+          currentTorrent.on('download', (bytes) => {
+            const progress = currentTorrent.progress();
+            document.getElementById('progress-bar').value = progress;
+            document.getElementById('progress-text').textContent = 
+              `${Math.round(progress * 100)}% - Downloading from ${currentTorrent.peers().length} peers`;
+          });
+          
+          currentTorrent.on('done', () => {
+            document.getElementById('status').textContent = 'Download complete!';
+            document.getElementById('progress-text').textContent = '100% - Download complete';
+            
+            // Create download link for the file
+            const file = currentTorrent.files()[0];
+            file.get_blob().then((blob) => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = file.name();
+              a.textContent = `Download ${file.name()}`;
+              document.getElementById('file-info').appendChild(a);
+            });
+          });
+          
+          document.getElementById('status').textContent = 'Download started!';
+        } catch (e) {
+          document.getElementById('status').textContent = `Error downloading: ${e}`;
+          console.error(e);
+        }
+      });
+      
+      // Check for magnet link in URL
+      const params = new URLSearchParams(window.location.search);
+      const magnetParam = params.get('magnet');
+      if (magnetParam) {
+        document.getElementById('magnet-input').value = magnetParam;
+      }
+    }
+    
+    // Start the application
+    run();
+  </script>
+</body>
+</html>

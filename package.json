@@ -1,0 +1,7 @@
+{
+  "name": "webtorrent-rs-wrapper",
+  "version": "0.1.0",
+  "description": "Wasm wrapper for webtorrent in Rust",
+  "main": "index.js",
+  "license": "MIT"
+}

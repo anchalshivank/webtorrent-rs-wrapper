@@ -1,0 +1,30 @@
+[package]
+name = "webtorrent-rs-wrapper"
+version = "0.1.0"
+edition = "2021"
+description = "Rust wrapper for WebTorrent JavaScript library"
+repository = "https://github.com/yourusername/webtorrent-rs-wrapper"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dependencies]
+js-sys = "0.3.77"
+serde = { version = "1.0.219", features = ["derive"] }
+serde-wasm-bindgen = "0.6.5"
+thiserror = "2.0.12"
+wasm-bindgen = "0.2.100"
+wasm-bindgen-futures = "0.4.50"
+web-sys = "0.3.77"
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.50"
+
+[profile.release]
+opt-level = "s"  # Optimize for size
+lto = true       # Link Time Optimization
