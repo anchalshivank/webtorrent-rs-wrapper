@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "webtorrent-rs-wrapper"
-version = "0.1.16"
+version = "0.1.17"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",
