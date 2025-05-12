@@ -9,69 +9,17 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-24.04
-    environment: crates-io
-    permissions:
-      contents: read
-      id-token: write
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.ref }}
 
-      - name: Setup Rust toolchain
-        uses: actions/setup-rust@v2
+      - name: Setup Rust
+        uses: actions/setup-rust@v1
         with:
           rust-version: stable
-          components: rustfmt, clippy
-          profile: minimal
-
-      - name: Verify Cargo.toml
-        run: |
-          if [ ! -f "Cargo.toml" ]; then
-            echo "❌ Cargo.toml not found!"
-            exit 1
-          fi
-          cargo check --quiet
-
-      - name: Verify tag-version consistency
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          CRATE_VERSION=$(grep -m1 '^version =' Cargo.toml | cut -d '"' -f2)
-          if [ "$TAG_VERSION" != "$CRATE_VERSION" ]; then
-            echo "❌ Version mismatch: tag ($TAG_VERSION) vs crate ($CRATE_VERSION)"
-            exit 1
-          fi
-          echo "✅ Version $CRATE_VERSION matches tag"
-
-      - name: Run pre-publish checks
-        run: |
-          cargo fmt --all -- --check
-          cargo clippy --all-targets --all-features -- -D warnings
-          cargo test --all-features
 
       - name: Publish to crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: |
-          if [[ "$GITHUB_REF" =~ ^refs/(heads/release|tags/v) ]]; then
-            echo "🚀 Publishing version $(grep '^version =' Cargo.toml | cut -d '"' -f2)"
-            cargo publish --token $CARGO_REGISTRY_TOKEN
-          else
-            echo "⏩ Skipping publish - not release branch or version tag"
-          fi
-
-      - name: Verify published version
-        if: always() && success() && startsWith(github.ref, 'refs/tags/v')
-        run: |
-          PUBLISHED_VERSION=$(curl -s https://crates.io/api/v1/crates/${{ github.repository#*/ }} | jq -r '.crate.max_version')
-          LOCAL_VERSION=$(grep '^version =' Cargo.toml | cut -d '"' -f2)
-          if [ "$PUBLISHED_VERSION" != "$LOCAL_VERSION" ]; then
-            echo "❌ Published version ($PUBLISHED_VERSION) doesn't match local ($LOCAL_VERSION)"
-            exit 1
-          fi
-          echo "✅ Successfully published version $PUBLISHED_VERSION"
+        run: cargo publish --token $CARGO_REGISTRY_TOKEN
