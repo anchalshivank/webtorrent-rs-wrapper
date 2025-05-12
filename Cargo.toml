@@ -1,6 +1,6 @@
 [package]
 name = "webtorrent-rs-wrapper"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 author = ["Shivank Anchal anchalshivank99@gmail.com"]
 description = "Rust wrapper for WebTorrent JavaScript library"
