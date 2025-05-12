@@ -13,7 +13,12 @@ extern "C" {
     pub fn create_client() -> JsWebTorrentClient;
 
     #[wasm_bindgen(method, js_name = seed)]
-    pub fn seed(this: &JsWebTorrentClient, input: &JsValue, opts: &JsValue, onseed: &JsValue) -> JsValue;
+    pub fn seed(
+        this: &JsWebTorrentClient,
+        input: &JsValue,
+        opts: &JsValue,
+        onseed: &JsValue,
+    ) -> JsValue;
 
     #[wasm_bindgen(method, js_name = add)]
     pub fn add(
@@ -30,12 +35,7 @@ extern "C" {
     pub fn get_torrent(this: &JsWebTorrentClient, torrent_id: &JsValue) -> Promise;
 
     #[wasm_bindgen(method, js_name = remove)]
-    pub fn remove(
-        this: &JsWebTorrentClient,
-        torrent_id: &JsValue,
-        opts: &JsValue,
-        cb: &JsValue,
-    );
+    pub fn remove(this: &JsWebTorrentClient, torrent_id: &JsValue, opts: &JsValue, cb: &JsValue);
 
     #[wasm_bindgen(method, js_name = throttleDownload)]
     pub fn throttle_download(this: &JsWebTorrentClient, rate: f64);
@@ -65,7 +65,7 @@ impl WebTorrentClient {
     #[wasm_bindgen(js_name = new)]
     pub fn new() -> Self {
         Self {
-            inner: create_client()
+            inner: create_client(),
         }
     }
 
@@ -80,14 +80,20 @@ impl WebTorrentClient {
     #[wasm_bindgen]
     pub async fn add(&self, torrent_id: String) -> Result<JsValue, JsValue> {
         let opts = Object::new();
-        let promise = self.inner.add(&JsValue::from_str(&torrent_id), &JsValue::from(opts), &JsValue::UNDEFINED);
+        let promise = self.inner.add(
+            &JsValue::from_str(&torrent_id),
+            &JsValue::from(opts),
+            &JsValue::UNDEFINED,
+        );
         JsFuture::from(Promise::from(promise)).await
     }
 
     #[wasm_bindgen]
     pub fn create_server(&self, options: Option<String>, force: bool) -> JsValue {
         let opts = match options {
-            Some(opts_str) => js_sys::JSON::parse(&opts_str).unwrap_or(JsValue::from(Object::new())),
+            Some(opts_str) => {
+                js_sys::JSON::parse(&opts_str).unwrap_or(JsValue::from(Object::new()))
+            }
             None => JsValue::from(Object::new()),
         };
         self.inner.create_server(&opts, force)
@@ -102,7 +108,11 @@ impl WebTorrentClient {
     #[wasm_bindgen]
     pub fn remove(&self, torrent_id: String) {
         let opts = Object::new();
-        self.inner.remove(&JsValue::from_str(&torrent_id), &JsValue::from(opts), &JsValue::UNDEFINED);
+        self.inner.remove(
+            &JsValue::from_str(&torrent_id),
+            &JsValue::from(opts),
+            &JsValue::UNDEFINED,
+        );
     }
 
     #[wasm_bindgen]

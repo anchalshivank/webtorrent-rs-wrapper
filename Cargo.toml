@@ -31,3 +31,7 @@ wasm-bindgen-test = "0.3.50"
 [profile.release]
 opt-level = "s"  # Optimize for size
 lto = true       # Link Time Optimization
+
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
