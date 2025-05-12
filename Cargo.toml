@@ -2,9 +2,12 @@
 name = "webtorrent-rs-wrapper"
 version = "0.1.0"
 edition = "2021"
+author = ["Shivank Anchal anchalshivank99@gmail.com"]
 description = "Rust wrapper for WebTorrent JavaScript library"
-repository = "https://github.com/yourusername/webtorrent-rs-wrapper"
+repository = "https://github.com/anchalshivank/webtorrent-rs-wrapper"
 license = "MIT"
+keywords = ["webtorrent", "p2p"] 
+categories = ["network-programming"] # Up to 5 categories
 
 [lib]
 crate-type = ["cdylib", "rlib"]
