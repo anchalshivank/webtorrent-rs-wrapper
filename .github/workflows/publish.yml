@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -32,8 +34,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git commit -am "chore: bump version to patch"
-          git push https://github.com/${{ github.repository }}:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }} HEAD:release
-
+          git push origin HEAD:release
 
       - name: Publish to crates.io
         env:
